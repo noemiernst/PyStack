@@ -9,14 +9,24 @@ except ImportError:
 
 import os.path
 import pandas as pd
+import sqlite3
 import argparse
-from helper_func import sprint
-from formula_ret import formula_ret
+from pre_processing.helper_func import sprint
+from pre_processing.formula_ret import formula_ret
+
+import timeit
+
 
 def process_FormulaId_QuestionId(output_dir,Formulas):
     output_file = os.path.join(output_dir,"FormulaId_PostId.csv")
     df = pd.DataFrame({"FormulaId":Formulas["FormulaId"],"PostId":Formulas["PostId"],"Body":Formulas["Body"]})
-    df.to_csv(output_file,index = True, columns = ["FormulaId","PostId","Body"])
+
+    DB = sqlite3.connect('../database/formulas.db')
+    df.to_csv(output_file,index = False, columns = ["FormulaId","PostId","Body"])
+    csv1 = pd.read_csv(output_file)
+    csv1.to_sql(name='Formulas', con=DB, if_exists='replace', index = False)
+
+    DB.close()
 
 def process_formulas(dir_path):
     # Questions.pkl: A dict pickle file, key: question id, value: [question title, question body]
@@ -58,7 +68,18 @@ def process_formulas(dir_path):
                 Formulas["PostId"].append(item[0])
                 Formulas["Body"].append(formula)
                 formula_index += 1
+
     return Formulas
 
-#Formulas = process_formulas("../dataset/mathematics/")
-#process_FormulaId_QuestionId("../dataset/mathematics/",Formulas)
+
+
+start = timeit.default_timer()
+Formulas = process_formulas("../dataset/mathematics/")
+stop = timeit.default_timer()
+print('Time retrieving Formulas: ', stop - start)
+
+
+start = timeit.default_timer()
+process_FormulaId_QuestionId("../dataset/mathematics/",Formulas)
+stop = timeit.default_timer()
+print('Time writing Formulas (CSV and DB): ', stop - start)
