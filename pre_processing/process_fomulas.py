@@ -10,21 +10,17 @@ except ImportError:
 import os.path
 import pandas as pd
 import sqlite3
-import argparse
-from pre_processing.helper_func import sprint
 from pre_processing.formula_ret import formula_ret
 
 import timeit
 
 
-def process_FormulaId_QuestionId(output_dir,Formulas):
-    output_file = os.path.join(output_dir,"FormulaId_PostId.csv")
+def process_FormulaId_QuestionId(Formulas):
+    output_file = '../database/formulas.db'
     df = pd.DataFrame({"FormulaId":Formulas["FormulaId"],"PostId":Formulas["PostId"],"Body":Formulas["Body"]})
 
-    DB = sqlite3.connect('../database/formulas.db')
-    df.to_csv(output_file,index = False, columns = ["FormulaId","PostId","Body"])
-    csv1 = pd.read_csv(output_file)
-    csv1.to_sql(name='Formulas', con=DB, if_exists='replace', index = False)
+    DB = sqlite3.connect(output_file)
+    df.to_sql(name='Formulas', con=DB, if_exists='replace', index = False)
 
     DB.close()
 
@@ -80,6 +76,6 @@ print('Time retrieving Formulas: ', stop - start)
 
 
 start = timeit.default_timer()
-process_FormulaId_QuestionId("../dataset/mathematics/",Formulas)
+process_FormulaId_QuestionId(Formulas)
 stop = timeit.default_timer()
 print('Time writing Formulas (CSV and DB): ', stop - start)
