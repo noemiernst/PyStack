@@ -53,7 +53,7 @@ if __name__ == "__main__":
     process */Comments.xml
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i","--input",default= "../dataset/ai/Comments.xml", help = "input: */Comments.xml, output: */Comments.csv")
+    parser.add_argument("-i","--input",default= "../dataset/mathematics/Comments.xml", help = "input: */Comments.xml, output: */Comments.csv")
     parser.add_argument("-d", "--database", default='../database/dataset.db', help="output database")
     args = parser.parse_args()
     input_file = args.input

@@ -58,7 +58,7 @@ if __name__ == "__main__":
 	process */PostLinks.xml
 	'''
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-i","--input",default= "../dataset/ai/PostLinks.xml", help = "input: */PostLinks.xml, output: */Comments.csv")
+	parser.add_argument("-i","--input",default= "../dataset/mathematics/PostLinks.xml", help = "input: */PostLinks.xml, output: */Comments.csv")
 	args = parser.parse_args()
 	input_file = args.input
 	print("input file %s " % input_file)
