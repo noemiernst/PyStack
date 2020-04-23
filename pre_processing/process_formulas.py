@@ -12,9 +12,10 @@ import pandas as pd
 import sqlite3
 from pre_processing.formula_ret import formula_ret
 import timeit
+import argparse
 
 
-def formula_processing(dir_path):
+def formula_processing(dir_path, database):
     # Questions.pkl: A dict pickle file, key: question id, value: [question title, question body]
     with open(os.path.join(dir_path, "Questions.pkl"), "rb") as f:
         questions_dict = pickle.load(f)
@@ -47,13 +48,12 @@ def formula_processing(dir_path):
                 Formulas["Body"].append(formula)
                 formula_index += 1
 
-    output_file = '../database/dataset.db'
     df = pd.DataFrame({"FormulaId":Formulas["FormulaId"],"PostId":Formulas["PostId"],"Body":Formulas["Body"]})
-    DB = sqlite3.connect(output_file)
+    DB = sqlite3.connect(database)
     df.to_sql(name='Formulas_Posts', con=DB, if_exists='replace', index = False)
     DB.close()
     print("***********************************")
-    print("output file: %s" % output_file)
+    print("output file: %s" % database)
     print("table: Formulas_Posts")
 
     with open(os.path.join(dir_path,"PostId_CommenterId_Text.pkl"), "rb") as f:
@@ -74,16 +74,18 @@ def formula_processing(dir_path):
                 formula_index += 1
 
     df = pd.DataFrame({"FormulaId":Formulas["FormulaId"],"CommentId":Formulas["CommentId"],"Body":Formulas["Body"]})
-    DB = sqlite3.connect(output_file)
+    DB = sqlite3.connect(database)
     df.to_sql(name='Formulas_Comments', con=DB, if_exists='replace', index = False)
     DB.close()
     print("table: Formulas")
 
+if __name__ == "__main__":
 
-start = timeit.default_timer()
-Formulas = process_formulas("../dataset/mathematics/")
-stop = timeit.default_timer()
-print('Time retrieving Formulas: ', stop - start)
-
-
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--input", default="../dataset/mathematics/",
+                        help="input: */Questions.pkl */Answers.pkl")
+    parser.add_argument("-d", "--database", default='../database/dataset.db', help="output database")
+    args = parser.parse_args()
+    input_file = args.input
+    print("processing input file %s " % input_file)
+    formula_processing(input_file, args.database)
