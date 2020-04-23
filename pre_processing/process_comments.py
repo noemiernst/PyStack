@@ -13,7 +13,9 @@ from helper_func import sprint
 import sqlite3
 
 def comments_processing(input_file, output_file):
-    d = {"PostId":[],"UserId":[],"Score":[],"Text":[],"CreationDate":[]}
+    print("Processing comments...")
+    d = {"CommentId": [],"PostId":[],"UserId":[],"Score":[],"Text":[],"CreationDate":[]}
+    comment_index = 0
     for event,elem in ET.iterparse(input_file):
             if event == "end":
                 try:
@@ -23,6 +25,7 @@ def comments_processing(input_file, output_file):
                     creationdate = elem.attrib["CreationDate"]
                     text = elem.attrib["Text"]
 
+                    d["Comment"].append(comment_index)
                     d["PostId"].append(postid)
                     d["UserId"].append(userid)
                     d["Score"].append(score)
@@ -30,23 +33,33 @@ def comments_processing(input_file, output_file):
                     d["Text"].append(text)
                     #print elem.tag,elem.attrib
                     elem.clear()
+
+                    comment_index +=1
                 except Exception as e:
                     pass
                     #print e
     assert len(d["PostId"]) == len(d["UserId"]) and len(d["UserId"]) == len(d["Score"]) and len(d["Score"]) == len(d["CreationDate"]) and len(d["Score"]) == len(d["Text"])
 
+    comment_dict = {}
+    for comment, post, user, score, text, creation in zip(d["CommentId"], d["PostId"], d["UserId"], d["Score"], d["Text"], d["CreationDate"]):
+        comment_dict[comment] = [post, user, score, text, creation]
+
+    '''
+    df = pd.DataFrame(comment_dict)
+
+    DB = sqlite3.connect(output_file)
+    df.to_sql(name='Comments', con=DB, if_exists='replace', index = False)
+    DB.close()
+
+    print("***********************************")
+    print("output file: %s" % output_file)
+    print("table: PostId_CommenterId")
+    '''
     file_dir = os.path.dirname(os.path.abspath(input_file))
     comments_file = os.path.join(file_dir,"PostId_CommenterId_Text.pkl")
 
-
-    df = pd.DataFrame(d)
-
-    DB = sqlite3.connect(output_file)
-    df.to_sql(name='PostId_CommenterId', con=DB, if_exists='replace', index = False)
-    DB.close()
-
     with open(comments_file,"wb")  as f:
-        pickle.dump(d,f)
+        pickle.dump(comment_dict,f)
 
 if __name__ == "__main__":
     '''
