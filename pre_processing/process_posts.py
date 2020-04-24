@@ -10,7 +10,7 @@ except ImportError:
 import os.path
 import pandas as pd
 import argparse
-from pre_processing.helper_func import sprint
+from helper_func import sprint
 import sqlite3
 
 
@@ -18,12 +18,15 @@ def process_QuestionId_AskerId(output_dir, Questions, database):
     output_file = os.path.join(output_dir, "QuestionId_AskerId.csv")
     df = pd.DataFrame({"QuestionId": Questions["QuestionId"], "AskerId": Questions["OwnerUserId"],
                        "CreationDate": Questions["CreationDate"]})
-    df.to_csv(output_file, index=True, columns=["QuestionId", "AskerId", "CreationDate"])
+
+    DB = sqlite3.connect(database)
+    df.to_sql(name='QuestionId_AskerId', con=DB, if_exists='replace', index = False)
+    DB.close()
 
     sprint(output_dir, "pystack_analysis.log", "# question-asker pairs: %d" % len(df))
 
 
-def process_QuestionId_AcceptedAnswerId(output_dir, Questions):
+def process_QuestionId_AcceptedAnswerId(output_dir, Questions, database):
     QuestionId = []
     AcceptedAnswerId = []
     for qid, aid in zip(Questions["QuestionId"], Questions["AcceptedAnswerId"]):
@@ -31,23 +34,34 @@ def process_QuestionId_AcceptedAnswerId(output_dir, Questions):
             QuestionId.append(qid)
             AcceptedAnswerId.append(aid)
     df = pd.DataFrame({"QuestionId": QuestionId, "AcceptedAnswerId": AcceptedAnswerId})
-    output_file = os.path.join(output_dir, "QuestionId_AcceptedAnswerId.csv")
-    df.to_csv(output_file, index=True, columns=["QuestionId", "AcceptedAnswerId"])
+
+    DB = sqlite3.connect(database)
+    df.to_sql(name='QuestionId_AcceptedAskerId', con=DB, if_exists='replace', index = False)
+    DB.close()
+
     sprint(output_dir, "pystack_analysis.log", "# question-acceptedAnswer pairs: %d" % len(df))
 
 
-def process_AnswerId_QuestionId(output_dir, Answers):
+def process_AnswerId_QuestionId(output_dir, Answers, database):
     output_file = os.path.join(output_dir, "AnswerId_QuestionId.csv")
     df = pd.DataFrame({"QuestionId": Answers["QuestionId"], "AnswerId": Answers["AnswerId"], "Score": Answers["Score"],
                        "CreationDate": Answers["CreationDate"]})
-    df.to_csv(output_file, index=True, columns=["QuestionId", "AnswerId", "Score", "CreationDate"])
+
+    DB = sqlite3.connect(database)
+    df.to_sql(name='AnswerId_QuestionId', con=DB, if_exists='replace', index = False)
+    DB.close()
+
     sprint(output_dir, "pystack_analysis.log", "# question-answer pairs: %d" % len(df))
 
 
-def process_AnswerId_AnswererId(output_dir, Answers):
+def process_AnswerId_AnswererId(output_dir, Answers, database):
     output_file = os.path.join(output_dir, "AnswerId_AnswererId.csv")
     df = pd.DataFrame({"AnswerId": Answers["AnswerId"], "AnswererId": Answers["OwnerUserId"]})
-    df.to_csv(output_file, index=True, columns=["AnswerId", "AnswererId"])
+
+    DB = sqlite3.connect(database)
+    df.to_sql(name='AnswerId_AnswererId', con=DB, if_exists='replace', index = False)
+    DB.close()
+
     sprint(output_dir, "pystack_analysis.log", "# answer-answerer pairs: %d" % len(df))
 
 
@@ -62,7 +76,7 @@ def process_question_tags(output_dir, Questions):
 
     sprint(output_dir, "pystack_analysis.log", "# question with tags: %d" % len(question_tags))
     sprint(output_dir, "pystack_analysis.log", "# tags per question: %0.4f" % (
-                sum([len(x) for _, x in question_tags.iteritems()]) * 1.0 / len(question_tags)))
+            sum([len(x) for _, x in question_tags.iteritems()]) * 1.0 / len(question_tags)))
     sprint(output_dir, "pystack_analysis.log", "# unique tags: %d" % len(set(tags_set)))
 
     with open(os.path.join(output_dir, "question_tags.pkl"), "wb") as f:
@@ -90,7 +104,7 @@ def process_answer_body(dir_path, Answers):
         pickle.dump(answers_body, f)
 
 
-def questionid_answererid(cate_name):
+def questionid_answererid(cate_name, database):
     questionid_answerid_file = os.path.join(cate_name, "AnswerId_QuestionId.csv")
     q_answer_df = pd.read_csv(questionid_answerid_file)
 
@@ -115,11 +129,15 @@ def questionid_answererid(cate_name):
 
     df = pd.DataFrame(
         {"QuestionId": ques, "AnswerId": answer, "AnswererId": answerer, "Score": score, "CreationDate": creation_date})
-    df.to_csv(os.path.join(cate_name, "QuestionId_AnswererId.csv"), index=True,
-              columns=["QuestionId", "AnswerId", "AnswererId", "Score", "CreationDate"])
+
+    DB = sqlite3.connect(database)
+    df.to_sql(name='QuestionId_AnswererId', con=DB, if_exists='replace', index = False)
+    DB.close()
+
     sprint(cate_name, "pystack_analysis.log", "# question-answer-answerer pairs: %d" % len(df))
 
-
+# delete this?
+'''
 def questionid_bestanswererid(cate_name):
     questionid_bestanswerid_file = os.path.join(cate_name, "QuestionId_AcceptedAnswerId.csv")
     q_b_df = pd.read_csv(questionid_bestanswerid_file)
@@ -140,8 +158,10 @@ def questionid_bestanswererid(cate_name):
     q_ber_df.to_csv(os.path.join(cate_name, "QuestionId_AcceptedAnswererId.csv"), index=True,
                     columns=["QuestionId", "AcceptedAnswerId", "AcceptedAnswererId"])
     sprint(cate_name, "pystack_analysis.log", "# question-bestAnswerer pairs: %d" % len(q_ber_df))
+'''
 
-
+# delete this?
+'''
 def askerid_answererid(cate_name):
     questionid_askerid_file = os.path.join(cate_name, "QuestionId_AskerId.csv")
     q_asker_df = pd.read_csv(questionid_askerid_file)
@@ -175,7 +195,7 @@ def askerid_answererid(cate_name):
     df.to_csv(os.path.join(cate_name, "AskerId_AnswererId.csv"), index=True,
               columns=["QuestionId", "AskerId", "AnswererId", "Score", "QuestionCreationDate", "AnswerCreationDate"])
     sprint(cate_name, "pystack_analysis.log", "# question-asker-answerer pairs: %d" % len(df))
-
+'''
 
 def process_common_attributes(Posts, elem):
     # common attributes between questions and answers
@@ -187,9 +207,9 @@ def process_common_attributes(Posts, elem):
     Posts["CreationDate"].append(elem.attrib["CreationDate"])
     Posts["Score"].append(int(elem.attrib["Score"]))
     Posts["Body"].append(elem.attrib["Body"])
-	# Posts["CommentCount"].append(int(elem.attrib["CommentCount"]))
+    # Posts["CommentCount"].append(int(elem.attrib["CommentCount"]))
     Posts["OwnerUserId"].append(owneruserid)
-	# Posts["LastEditorUserId"].append(int(elem.attrib["LastEditorUserId"]) if ("LastEditorUserId" in elem.attrib) else None)
+    # Posts["LastEditorUserId"].append(int(elem.attrib["LastEditorUserId"]) if ("LastEditorUserId" in elem.attrib) else None)
     return True
 
 
@@ -253,19 +273,19 @@ def posts_processing(file_name, database):
                 elem.clear()
             except Exception as e:
                 pass
-				# print("Exception: %s" % e)
+            # print("Exception: %s" % e)
 
     dir_path = os.path.dirname(os.path.abspath(file_name))
 
     questions_file = os.path.join(dir_path, "Questions.pkl")
 
     process_QuestionId_AskerId(dir_path, Questions, database)
-    process_QuestionId_AcceptedAnswerId(dir_path, Questions)
-    process_AnswerId_QuestionId(dir_path, Answers)
-    process_AnswerId_AnswererId(dir_path, Answers)
-    questionid_answererid(dir_path)
-    questionid_bestanswererid(dir_path)
-    askerid_answererid(dir_path)
+    process_QuestionId_AcceptedAnswerId(dir_path, Questions, database)
+    process_AnswerId_QuestionId(dir_path, Answers, database)
+    process_AnswerId_AnswererId(dir_path, Answers, database)
+    questionid_answererid(dir_path, database)
+    #questionid_bestanswererid(dir_path)
+    #askerid_answererid(dir_path)
     process_question_tags(dir_path, Questions)
     process_answer_body(dir_path, Answers)
     process_question_text(dir_path, Questions)
@@ -276,8 +296,10 @@ if __name__ == "__main__":
     process */Posts.xml
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", default="../dataset/mathematics/Posts.xml", help="input: */Posts.xml, output: *.csv")
+    parser.add_argument("-i", "--input", default="../dataset/mathematics/Posts.xml",
+                        help="input: */Posts.xml, output: *.csv")
+    parser.add_argument("-d", "--database", default='../database/dataset.db', help="output database")
     args = parser.parse_args()
     input_file = args.input
     print("processing input file %s " % input_file)
-    posts_processing(input_file)
+    posts_processing(input_file, args.database)
